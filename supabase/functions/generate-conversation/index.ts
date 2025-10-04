@@ -137,10 +137,10 @@ const formatContent = (text: string) => {
   return formatted;
 };
 
-// Function to create simple HTML email template with plain text content
+// Function to create HTML email template
 const createEmailTemplate = (characterName: string, goal: string, conversation: string) => {
-  // Just escape HTML entities - keep original line breaks for white-space: pre-wrap
-  const escapedConversation = escapeHtml(conversation);
+  // Convert OpenAI's response (likely markdown) to HTML
+  const formattedConversation = formatContent(conversation);
   
   return `
 <!DOCTYPE html>
@@ -195,12 +195,8 @@ const createEmailTemplate = (characterName: string, goal: string, conversation: 
               <hr style="border: none; border-top: 2px solid #e2e8f0; margin: 30px 0;">
               
               <!-- Action Plan -->
-              <h2 style="margin: 0 0 20px 0; color: #2d3748; font-size: 24px; font-weight: 700;">
-                📋 Your Action Plan
-              </h2>
-              
-              <div style="color: #4a5568; font-size: 15px; line-height: 1.8; white-space: pre-wrap; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                ${escapedConversation}
+              <div>
+                ${formattedConversation}
               </div>
               
             </td>
@@ -289,7 +285,7 @@ serve(async (req) => {
     const { error: emailError } = await resend.emails.send({
       from: 'goggins@momentoai.co',
       to: [email],
-      subject: `Your 2-Month Plan from ${character_name} 🚀`,
+      subject: `Your 2 Month Plan from ${character_name} 🚀`,
       html: emailHtml,
     });
 
