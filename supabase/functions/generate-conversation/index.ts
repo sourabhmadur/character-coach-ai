@@ -139,8 +139,8 @@ const formatContent = (text: string) => {
 
 // Function to create simple HTML email template with plain text content
 const createEmailTemplate = (characterName: string, goal: string, conversation: string) => {
-  // Just escape HTML entities and preserve line breaks
-  const escapedConversation = escapeHtml(conversation).replace(/\n/g, '<br>');
+  // Just escape HTML entities - keep original line breaks for white-space: pre-wrap
+  const escapedConversation = escapeHtml(conversation);
   
   return `
 <!DOCTYPE html>
