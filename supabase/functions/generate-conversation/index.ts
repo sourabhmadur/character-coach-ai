@@ -136,9 +136,10 @@ const formatContent = (text: string) => {
   return formatted;
 };
 
-// Function to create beautiful HTML email template
+// Function to create simple HTML email template with plain text content
 const createEmailTemplate = (characterName: string, goal: string, conversation: string) => {
-  const formattedConversation = formatContent(conversation);
+  // Just escape HTML entities and preserve line breaks
+  const escapedConversation = escapeHtml(conversation).replace(/\n/g, '<br>');
   
   return `
 <!DOCTYPE html>
@@ -197,8 +198,8 @@ const createEmailTemplate = (characterName: string, goal: string, conversation: 
                 📋 Your Action Plan
               </h2>
               
-              <div style="color: #4a5568; font-size: 15px; line-height: 1.8;">
-                ${formattedConversation}
+              <div style="color: #4a5568; font-size: 15px; line-height: 1.8; white-space: pre-wrap; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                ${escapedConversation}
               </div>
               
             </td>
