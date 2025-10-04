@@ -17,6 +17,7 @@ export type Database = {
       subscriptions: {
         Row: {
           character_name: string
+          conversation: string | null
           created_at: string
           email: string
           goal: string
@@ -24,6 +25,7 @@ export type Database = {
         }
         Insert: {
           character_name: string
+          conversation?: string | null
           created_at?: string
           email: string
           goal: string
@@ -31,6 +33,7 @@ export type Database = {
         }
         Update: {
           character_name?: string
+          conversation?: string | null
           created_at?: string
           email?: string
           goal?: string
