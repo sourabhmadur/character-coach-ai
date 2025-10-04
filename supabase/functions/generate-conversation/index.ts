@@ -244,11 +244,11 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get API keys
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    if (!openaiApiKey) {
+      throw new Error('OPENAI_API_KEY not configured');
     }
     if (!resendApiKey) {
       throw new Error('RESEND_API_KEY not configured');
@@ -266,27 +266,29 @@ serve(async (req) => {
     const systemPrompt = characterPrompts[character_name] || 
       `Create a detailed 2-month action plan for someone working towards: "${goal}". Break it down week by week with specific actions and milestones. Format it clearly with weekly breakdowns.`;
 
-    // Call Lovable AI
-    console.log('Calling Lovable AI...');
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Call OpenAI
+    console.log('Calling OpenAI...');
+    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Create a comprehensive 2-month plan for ${email} to achieve their goal.` }
+          { role: 'user', content: `Create a comprehensive 2-month plan to achieve their goal.` }
         ],
+        temperature: 0.8,
+        max_tokens: 4000,
       }),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('Lovable AI error:', aiResponse.status, errorText);
-      throw new Error(`Lovable AI request failed: ${aiResponse.status}`);
+      console.error('OpenAI API error:', aiResponse.status, errorText);
+      throw new Error(`OpenAI API request failed: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
