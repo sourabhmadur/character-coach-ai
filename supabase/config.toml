@@ -1,1 +1,4 @@
 project_id = "tbnxlhamuwqurreytwzp"
+
+[functions.generate-conversation]
+verify_jwt = false
