@@ -1,5 +1,6 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,21 +22,28 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get Lovable AI key
+    // Get API keys
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    
     if (!lovableApiKey) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY not configured');
+    }
 
-    // Create character-specific prompt
+    const resend = new Resend(resendApiKey);
+
+    // Create character-specific prompt for 2-month plan
     const characterPrompts: Record<string, string> = {
-      'David Goggins': `You are David Goggins, the ultra-endurance athlete and motivational speaker. Generate a powerful, no-nonsense motivational message for someone whose fitness goal is: "${goal}". Be intense, direct, and push them to overcome their mental barriers. Keep it under 200 words.`,
-      'Tyrion Lannister': `You are Tyrion Lannister, the wise and witty strategist from Game of Thrones. Generate an intelligent, thoughtful message for someone whose reading goal is: "${goal}". Use wit, wisdom, and literary references. Keep it under 200 words.`,
-      'Dalai Lama': `You are the Dalai Lama, a spiritual leader known for compassion and mindfulness. Generate a peaceful, mindful message for someone whose meditation goal is: "${goal}". Focus on inner peace, compassion, and spiritual growth. Keep it under 200 words.`,
+      'David Goggins': `You are David Goggins, the ultra-endurance athlete and motivational speaker. Create a detailed 2-month action plan for someone whose fitness goal is: "${goal}". Be intense, direct, and push them to overcome their mental barriers. Break it down week by week with specific actions, milestones, and mental strategies. Make it challenging but achievable. Format it clearly with weekly breakdowns.`,
+      'Tyrion Lannister': `You are Tyrion Lannister, the wise and witty strategist from Game of Thrones. Create a detailed 2-month reading plan for someone whose goal is: "${goal}". Use wit, wisdom, and strategic thinking. Break it down week by week with specific books, reading targets, and reflection points. Include literary insights and clever observations. Format it clearly with weekly breakdowns.`,
+      'Dalai Lama': `You are the Dalai Lama, a spiritual leader known for compassion and mindfulness. Create a detailed 2-month meditation and mindfulness plan for someone whose goal is: "${goal}". Focus on inner peace, compassion, and spiritual growth. Break it down week by week with specific practices, meditation techniques, and spiritual milestones. Format it clearly with weekly breakdowns.`,
     };
 
     const systemPrompt = characterPrompts[character_name] || 
-      `Generate a motivational message for someone working towards: "${goal}". Keep it under 200 words.`;
+      `Create a detailed 2-month action plan for someone working towards: "${goal}". Break it down week by week with specific actions and milestones. Format it clearly with weekly breakdowns.`;
 
     // Call Lovable AI
     console.log('Calling Lovable AI...');
@@ -49,7 +57,7 @@ serve(async (req) => {
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Generate your first motivational message for ${email}.` }
+          { role: 'user', content: `Create a comprehensive 2-month plan for ${email} to achieve their goal.` }
         ],
       }),
     });
@@ -78,8 +86,34 @@ serve(async (req) => {
 
     console.log('Successfully updated subscription:', subscription_id);
 
+    // Send email with the 2-month plan
+    console.log('Sending email to:', email);
+    const { error: emailError } = await resend.emails.send({
+      from: 'goggins@momentoai.co',
+      to: [email],
+      subject: `Your 2-Month Plan from ${character_name}`,
+      html: `
+        <h1>Your Personalized 2-Month Plan</h1>
+        <p>Hello! ${character_name} has created a custom plan to help you achieve your goal:</p>
+        <p><strong>Your Goal:</strong> ${goal}</p>
+        <hr />
+        <div style="white-space: pre-wrap; font-family: Arial, sans-serif; line-height: 1.6;">
+          ${conversation}
+        </div>
+        <hr />
+        <p>Stay committed and track your progress. You've got this!</p>
+      `,
+    });
+
+    if (emailError) {
+      console.error('Error sending email:', emailError);
+      throw emailError;
+    }
+
+    console.log('Email sent successfully to:', email);
+
     return new Response(
-      JSON.stringify({ success: true, message: 'Conversation generated' }),
+      JSON.stringify({ success: true, message: 'Conversation generated and email sent' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
